@@ -34,10 +34,9 @@
 		// get a new websocket object from factory (check com.strumsoft.websocket.WebSocketFactory.java)
 		this.socket = WebSocketFactory.getInstance(url);
 		// store in registry
-        //console.log(this.socket);
+        //console.log(this.socket.getReadyState());
         if(this.socket) {
-            //for(var i in this.socket){
-            //}
+            console.log(this.socket.getId());
 			WebSocket.store[this.socket.getId()] = this;
 		} else {
 			throw new Error('Websocket instantiation failed! Address might be wrong.');
