@@ -1,101 +1,83 @@
-/*
- * Copyright (c) 2010 Animesh Kumar  (https://github.com/anismiles)
- * Copyright (c) 2010 Strumsoft  (https://strumsoft.com)
- * 
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the "Software"), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
- *  
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *  
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- *  
- */
+/**
+ *   Copyright 2013 Mehran Ziadloo
+ *   (https://github.com/ziadloo/PhoneGap-Java-WebSocket)
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ **/
+
 package com.leonard.SocketTest.socket;
 
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Random;
-import java.util.Vector;
-
-import android.os.Handler;
+import java.util.HashMap;
+import java.util.Map;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
+import com.leonard.SocketTest.socket.AndroidWebSocket;
 
-/**
- * The <tt>WebSocketFactory</tt> is like a helper class to instantiate new
- * WebSocket instaces especially from Javascript side. It expects a valid
- * "ws://" URI.
- * 
- * @author Animesh Kumar
- */
-public class WebSocketFactory {
-	
-	private Vector<WebSocket> socketList = new Vector<WebSocket>();
-	
-	private Handler handler;
+public class WebSocketFactory
+{
+    private WebView mView;
+    private Map<String, AndroidWebSocket> collection;
 
-	/** The app view. */
-	WebView appView;
+    public WebSocketFactory(WebView view)
+    {
+        mView = view;
+        collection = new HashMap<String, AndroidWebSocket>();
+    }
 
-	/**
-	 * Instantiates a new web socket factory.
-	 * 
-	 * @param appView
-	 *            the app view
-	 */
-	public WebSocketFactory(Handler h, WebView appView) {
-		this.appView = appView;
-		this.handler = h;
-	}
-	
-	public Vector<WebSocket> getSocketList() {
-		return socketList;
-	}
+    @JavascriptInterface
+    public AndroidWebSocket getNew(String url) throws URISyntaxException
+    {
+        return getNew(url, (String)null);
+    }
 
-	@JavascriptInterface
-	public WebSocket getInstance(String url) {
-		// use Draft76 by default
-		return getInstance(url, WebSocket.Draft.DRAFT76);
-	}
+    @JavascriptInterface
+    public AndroidWebSocket getNew(String url, String[] protocols) throws URISyntaxException
+    {
+        String p = new String();
+        if (protocols != null && protocols.length > 0) {
+            StringBuilder sb = new StringBuilder(protocols[0]);
+            for (int i=1; i<protocols.length; i++) {
+                sb.append(", ");
+                sb.append(protocols[i]);
+            }
+            p = sb.toString();
+        }
+        return getNew(url, p);
+    }
 
-	@JavascriptInterface
-	public WebSocket getInstance(String url, WebSocket.Draft draft) {
-		WebSocket socket = null;
-		Thread th = null;
-		try {
-			socket = new WebSocket(handler, appView, new URI(url), draft, getRandonUniqueId());
-			socketList.add(socket);
-			th = socket.connect();
-		} catch (Exception e) {
-			e.printStackTrace();
-			if(th != null) {
-				th.interrupt();
-			}
-		}
-		return socket;
-	}
+    @JavascriptInterface
+    public AndroidWebSocket getNew(String url, String protocols) throws URISyntaxException
+    {
+        Map<String, String> headers = null;
+        if (protocols != null) {
+            headers = new HashMap<String, String>();
+            headers.put("Sec-WebSocket-Protocol", protocols);
+        }
+        AndroidWebSocket ws = new AndroidWebSocket(mView, url, headers);
+        if (!collection.containsKey(ws.getIdentifier())) {
+            collection.put(ws.getIdentifier(), ws);
+        }
+        return ws;
+    }
 
-	/**
-	 * Generates random unique ids for WebSocket instances
-	 * 
-	 * @return String
-	 */
-	private String getRandonUniqueId() {
-		return "WEBSOCKET." + new Random().nextInt(100);
-	}
-
+    @JavascriptInterface
+    public void removeSocket(String key)
+    {
+        if (!collection.containsKey(key)) {
+            AndroidWebSocket ws = collection.get(key);
+            collection.remove(key);
+            ws.close();
+        }
+    }
 }

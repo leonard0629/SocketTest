@@ -6,7 +6,7 @@
   </head>
   <body>
   WebSocket test page!
-  <pre>
+  <!--<pre>
 [code]
 	// new socket
 	var socket = new WebSocket('ws://192.168.199.109:9999/');
@@ -27,12 +27,12 @@
 	};
 
 [/code]
-  </pre>
+  </pre>-->
   </body>
   
 <script type="text/javascript" charset="utf-8">
 	// new socket
-	var socket = new WebSocket('ws://192.168.2.108:9999/');
+	var socket = new WebSocket('ws://127.0.0.1:9999/');
 	// push a message after the connection is established.
 	socket.onopen = function() {
 		console.log("enter socket.onopen");
